@@ -1,0 +1,6 @@
+# name arrival burst priority
+P1 0 8 2
+P2 2 5 1
+P3 5 6 3
+P4 9 4 2
+

@@ -25,7 +25,7 @@ typedef struct {
 /* Parameters */
 #define MAX_PROC 128
 #define MAX_POL 32
-#define TICK_MS 200  /* GUI tick per simulation time unit in milliseconds */
+#define TICK_MS 500  /* GUI tick per simulation time unit in milliseconds */
 
 /* Application state */
 static Process procs[MAX_PROC];
@@ -77,14 +77,15 @@ static void refresh_ready_view() {
     }
 }
 
-/* Drawing callback for gantt area */
+
+
 static gboolean on_draw_gantt(GtkWidget *widget, cairo_t *cr, gpointer data) {
     GtkAllocation alloc;
     gtk_widget_get_allocation(widget, &alloc);
 
     int w = alloc.width;
     int h = alloc.height;
-    int left = 50, top = 10;
+    int left = 50, top = 30; // marge pour axe temps
     int row_h = 24;
     int cols = (sim_time + 10) > 1 ? (sim_time + 10) : 1;
     double cell_w = (double)(w - left - 20) / (cols);
@@ -93,44 +94,56 @@ static gboolean on_draw_gantt(GtkWidget *widget, cairo_t *cr, gpointer data) {
     cairo_set_source_rgb(cr, 1,1,1);
     cairo_paint(cr);
 
-    /* draw time grid and labels */
-    cairo_set_source_rgb(cr, 0.8,0.8,0.8);
-    for (int t=0; t<cols; t+=1) {
+    /* --- Axe du temps --- */
+    cairo_set_source_rgb(cr, 0,0,0);
+    cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_set_font_size(cr, 12);
+    for (int t=0; t<=cols && t<MAX_TIME; t++) {
         double x = left + t*cell_w;
-        cairo_rectangle(cr, x, top, 1, h-top-20);
-    }
-    cairo_fill(cr);
+        /* tick vertical */
+        cairo_set_source_rgb(cr, 0.8,0.8,0.8);
+        cairo_rectangle(cr, x, top-10, 1, h-top-20);
+        cairo_fill(cr);
 
-    /* For each process row, draw its bars scanning gantt[] */
-    for (int p=0;p<proc_count;p++) {
-        int y = top + p*row_h + 2;
+        /* label du temps tous les 1 ou 2 unités selon l'espace */
+        if (t % 1 == 0) { // ici on peut mettre 1 ou 2 pour espacer
+            cairo_set_source_rgb(cr, 0,0,0);
+            char buf[16]; snprintf(buf, sizeof(buf), "%d", t);
+            cairo_move_to(cr, x-4, top);
+            cairo_show_text(cr, buf);
+        }
+    }
+
+
+
+    /* draw process bars */
+    for (int p = 0; p < proc_count; p++) {
+        int y = top + p * row_h + 2;
+
         /* name */
         cairo_set_source_rgb(cr, 0,0,0);
-        cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-        cairo_set_font_size(cr, 12);
         cairo_move_to(cr, 5, y+12);
         cairo_show_text(cr, procs[p].name);
 
-        /* draw time cells for this process */
-        for (int t=0;t<=sim_time && t<MAX_TIME; t++) {
+        for (int t = 0; t <= sim_time && t < MAX_TIME; t++) {
             int who = gantt[t];
-            if (who == p) {
-                /* filled rectangle (running) */
-                cairo_set_source_rgb(cr, 0.2, 0.6, 0.9);
-                double x = left + t*cell_w;
-                cairo_rectangle(cr, x, y, cell_w-1, row_h-4);
-                cairo_fill(cr);
-            } else {
-                /* light background */
-                cairo_set_source_rgb(cr, 0.95,0.95,0.95);
-                double x = left + t*cell_w;
-                cairo_rectangle(cr, x, y, cell_w-1, row_h-4);
-                cairo_fill(cr);
-            }
+            double x = left + t*cell_w;
+
+            if (who == p)
+                cairo_set_source_rgb(cr, 0.2, 0.6, 0.9); // en cours
+            else
+                cairo_set_source_rgb(cr, 0.95, 0.95, 0.95); // idle
+
+            cairo_rectangle(cr, x, y, cell_w-1, row_h-4);
+            cairo_fill(cr);
         }
     }
+
     return FALSE;
 }
+
+
+
 
 /* simulation tick executed by g_timeout_add */
 static gboolean simulation_tick(gpointer data) {
@@ -255,13 +268,20 @@ static void on_policy_changed(GtkComboBoxText *cb, gpointer data) {
     }
 }
 
-static void on_start_clicked(GtkButton *b, gpointer data) {
-    if (sim_running) return;
-    quantum = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin_quantum));
-    sim_running = true;
-    /* start timer: tick every TICK_MS ms */
-    g_timeout_add(TICK_MS, simulation_tick, NULL);
+/* callback Start — utilise le spin passé en user_data */
+static void on_start_clicked(GtkWidget *widget, gpointer data) {
+    GtkWidget *spin = GTK_WIDGET(data);
+    /* récupérer la valeur choisie et l'écrire dans la variable globale */
+    quantum = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin));
+    printf("Quantum choisi = %d\n", quantum);
+
+    if (!sim_running) {
+        sim_running = true;
+        /* démarre le timer si ce n'est pas déjà fait */
+        g_timeout_add(TICK_MS, simulation_tick, NULL);
+    }
 }
+
 
 static void on_pause_clicked(GtkButton *b, gpointer data) {
     sim_running = false;
@@ -330,7 +350,7 @@ void build_gui() {
 
     GtkWidget *lbl_q = gtk_label_new("Quantum:");
     GtkWidget *spin = gtk_spin_button_new_with_range(1, 1000, 1);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin), 20);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin), 2);
     spin_quantum = spin;
 
     btn_start = gtk_button_new_with_label("Démarrer");
@@ -338,7 +358,7 @@ void build_gui() {
     btn_abort = gtk_button_new_with_label("Abort");
     btn_reset = gtk_button_new_with_label("Réinitialiser");
 
-    g_signal_connect(btn_start, "clicked", G_CALLBACK(on_start_clicked), NULL);
+    g_signal_connect(btn_start, "clicked", G_CALLBACK(on_start_clicked), spin);
     g_signal_connect(btn_pause, "clicked", G_CALLBACK(on_pause_clicked), NULL);
     g_signal_connect(btn_abort, "clicked", G_CALLBACK(on_abort_clicked), NULL);
     g_signal_connect(btn_reset, "clicked", G_CALLBACK(on_reset_clicked), NULL);
@@ -408,4 +428,5 @@ int main(int argc, char **argv) {
     for (int i=0;i<policy_count;i++) unload_policy(&policies[i]);
     return 0;
 }
+ 
 

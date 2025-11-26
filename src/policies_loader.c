@@ -13,6 +13,7 @@ typedef struct {
     char name[128];
     void *handle;
     void *symbol; // pointer to function
+    void *reset_symbol; // pointer to reset function
 } PolicyEntry;
 
 /* Scan directory for .so files and fill entries. Returns number found (<= max). */
@@ -31,6 +32,7 @@ int discover_policies(const char *dirpath, PolicyEntry *out, int max) {
                 char *dot = strrchr(out[c].name, '.'); if (dot) *dot = '\0';
                 out[c].handle = NULL;
                 out[c].symbol = NULL;
+                out[c].reset_symbol = NULL;
                 c++;
             }
         }
@@ -57,7 +59,22 @@ int load_policy(PolicyEntry *entry) {
         entry->handle = NULL;
         return -1;
     }
+    /* Try to load optional reset function */
+    entry->reset_symbol = dlsym(entry->handle, "policy_reset");
+    
     return 0;
+}
+
+/* Close all loaded handles and reset count */
+void cleanup_policies(PolicyEntry *entries, int count) {
+    for (int i=0; i<count; i++) {
+        if (entries[i].handle) {
+            dlclose(entries[i].handle);
+            entries[i].handle = NULL;
+            entries[i].symbol = NULL;
+            entries[i].reset_symbol = NULL;
+        }
+    }
 }
 
 /* Unload all loaded policies */
@@ -67,6 +84,7 @@ void unload_policy(PolicyEntry *entry) {
         dlclose(entry->handle);
         entry->handle = NULL;
         entry->symbol = NULL;
+        entry->reset_symbol = NULL;
     }
 }
 

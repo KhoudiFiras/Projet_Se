@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g -fPIC -Iinclude `pkg-config --cflags gtk+-3.0`
 LDFLAGS = `pkg-config --libs gtk+-3.0` -ldl
 
-SRC = src/gui.c src/parser.c src/policies_loader.c src/main.c
+SRC = src/gui.c src/parser.c src/policies_loader.c
 OBJ = $(SRC:.c=.o)
 
 # Detect all .c files inside politiques/

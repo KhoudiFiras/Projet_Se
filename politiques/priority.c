@@ -9,3 +9,7 @@ int policy_select(Process *proc, int n, int time, int quantum) {
     return best;
 }
 
+void policy_reset() {
+    // No internal state to reset for Priority
+}
+

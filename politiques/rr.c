@@ -62,5 +62,14 @@ int policy_select(Process *proc, int n, int time, int quantum) {
     return rr_index;
 }
 
+/* Reset internal state */
+void policy_reset() {
+    rr_index = -1;
+    rr_time = 0;
+    q_start = 0;
+    q_end = 0;
+    // queue content doesn't strictly need clearing if indices are reset
+}
+
 
 

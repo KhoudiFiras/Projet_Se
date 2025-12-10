@@ -779,6 +779,33 @@ void build_gui() {
                                               GTK_STYLE_PROVIDER(provider),
                                               GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
+    /* Load default config if exists */
+    if (access("sample_config.txt", F_OK) != -1) {
+        char cwd[1024];
+        if (getcwd(cwd, sizeof(cwd)) != NULL) {
+            char fullpath[2048];
+            snprintf(fullpath, sizeof(fullpath), "%s/sample_config.txt", cwd);
+            gtk_entry_set_text(GTK_ENTRY(entry_file), fullpath);
+            
+            /* Trigger load */
+            proc_count = parse_config(fullpath, procs, MAX_PROC);
+            if (proc_count >= 0) {
+                sim_time = 0; finished = 0; stats_recorded = false; 
+                for (int i=0;i<MAX_TIME;i++) gantt[i] = -1;
+                for (int i=0;i<proc_count;i++) {
+                    procs[i].remaining = procs[i].burst;
+                    procs[i].start_time = -1;
+                    procs[i].end_time = -1;
+                    procs[i].waited = 0;
+                    procs[i].state = NEW;
+                }
+                refresh_ready_view();
+                gtk_widget_queue_draw(drawing_gantt);
+                g_print("Default config loaded: %s\n", fullpath);
+            }
+        }
+    }
+
     gtk_widget_show_all(window);
 }
 

@@ -586,11 +586,16 @@ static void discover_and_populate_policies() {
         g_print("No policies found in politiques/\n");
         return;
     }
+    
+    int default_idx = 0;
     for (int i=0;i<policy_count;i++) {
         gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo_policy), policies[i].name);
+        if (strcmp(policies[i].name, "fifo") == 0) {
+            default_idx = i;
+        }
     }
-    gtk_combo_box_set_active(GTK_COMBO_BOX(combo_policy), 0);
-    current_policy_index = 0;
+    gtk_combo_box_set_active(GTK_COMBO_BOX(combo_policy), default_idx);
+    current_policy_index = default_idx;
 }
 
 /* Build GUI and connect everything */

@@ -356,6 +356,13 @@ static gboolean simulation_tick(gpointer data) {
     /* call policy to choose process index */
     int idx = fn(procs, proc_count, sim_time, quantum); /* sign: Process*, n, time, quantum */
 
+    /* Ensure any previously running process that is not the selected one is marked READY */
+    for (int i = 0; i < proc_count; i++) {
+        if (procs[i].state == RUNNING && i != idx) {
+            procs[i].state = READY;
+        }
+    }
+
     for (int i=0;i<proc_count;i++) {
         /* set ready if arrived and not finished */
         if (procs[i].arrival <= sim_time && procs[i].state != FINISHED) {

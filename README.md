@@ -120,7 +120,7 @@ P1 0 5 2
 P2 1 6 1
 
 P3 2 2 3
----
+
 
 ## Scheduling Policies API
 Each scheduling policy must implement:

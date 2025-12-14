@@ -100,15 +100,19 @@ You can add new scheduling algorithms without touching the core code!
   - duration (burst)
   - priority
   - comments + empty lines handled
+    
 2- Implemented scheduling policies:
   - **FIFO**
   - **Round Robin**
   - **Preemptive Priority**
   - **Aging (dynamic priority)**
   - **Multi-Level**
+    
 3- Complete Makefile to compile the project and generate the .so files
+
 4- GTK+ 3 graphical UI with real-time simulation monitoring
   - Graphical Gantt chart
+    
 5- Dynamic loading of policies (dlopen, .so)
 ---
 
@@ -143,6 +147,9 @@ The GTK UI allows:
 
 ## License
 License: GENERAL PUBLIC LICENSE
+The project uses the General Public License (GPL), which allows free use, modification, and redistribution of the software.
+Any modified version must also be distributed under the GPL, ensuring that all derived works remain free and open source.
+
 
 ## Team (SCRUM)
 Work completed in a Scrum group (5 members):

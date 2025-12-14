@@ -114,11 +114,12 @@ You can add new scheduling algorithms without touching the core code!
   - Graphical Gantt chart
     
 5- Dynamic loading of policies (dlopen, .so)
----
 
 ## Configuration File Format
 Example process file:
+
 # name arrival burst priority
+
 P1 0 5 2
 
 P2 1 6 1
@@ -147,6 +148,7 @@ The GTK UI allows:
 
 ## License
 License: GENERAL PUBLIC LICENSE
+
 The project uses the General Public License (GPL), which allows free use, modification, and redistribution of the software.
 Any modified version must also be distributed under the GPL, ensuring that all derived works remain free and open source.
 

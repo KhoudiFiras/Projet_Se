@@ -91,7 +91,7 @@ You can add new scheduling algorithms without touching the core code!
     ```
 3. Run make again. The new policy will automatically appear in the dropdown menu!
 
-=======
+
 
 ## Main Features
 1- Reading a process configuration file:
@@ -118,7 +118,7 @@ You can add new scheduling algorithms without touching the core code!
 ## Configuration File Format
 Example process file:
 
-# name arrival burst priority
+name arrival burst priority
 
 P1 0 5 2
 

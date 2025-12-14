@@ -3,9 +3,7 @@
 #include <string.h>
 #include "process.h"
 
-/* Parse config file: format "NAME ARRIVAL BURST PRIORITY" lines.
-   Ignore lines starting with '#' and blank lines. Returns count or -1 on error.
-*/
+
 int parse_config(const char *path, Process *arr, int maxp) {
     FILE *f = fopen(path, "r");
     if (!f) return -1;

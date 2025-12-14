@@ -10,6 +10,6 @@ int policy_select(Process *proc, int n, int time, int quantum) {
 }
 
 void policy_reset() {
-    // No internal state to reset for Priority
+
 }
 

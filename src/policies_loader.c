@@ -5,18 +5,17 @@
 #include <string.h>
 #include <dlfcn.h>
 
-/* Structure to keep loaded policy handles and names */
-typedef int (*policy_fn_t)(void*, int, int, int); // actual signature casted later
 
+typedef int (*policy_fn_t)(void*, int, int, int); 
 typedef struct {
     char path[512];
     char name[128];
     void *handle;
-    void *symbol; // pointer to function
-    void *reset_symbol; // pointer to reset function
+    void *symbol; 
+    void *reset_symbol; 
 } PolicyEntry;
 
-/* Scan directory for .so files and fill entries. Returns number found (<= max). */
+
 int discover_policies(const char *dirpath, PolicyEntry *out, int max) {
     DIR *d = opendir(dirpath);
     if (!d) return 0;
@@ -27,7 +26,7 @@ int discover_policies(const char *dirpath, PolicyEntry *out, int max) {
             size_t L = strlen(ent->d_name);
             if (L > 3 && strcmp(ent->d_name + L - 3, ".so") == 0) {
                 snprintf(out[c].path, sizeof(out[c].path), "%s/%s", dirpath, ent->d_name);
-                /* name without extension */
+
                 strncpy(out[c].name, ent->d_name, sizeof(out[c].name)-1);
                 char *dot = strrchr(out[c].name, '.'); if (dot) *dot = '\0';
                 out[c].handle = NULL;
@@ -41,7 +40,7 @@ int discover_policies(const char *dirpath, PolicyEntry *out, int max) {
     return c;
 }
 
-/* Load policy by index and resolve symbol "policy_select" */
+
 int load_policy(PolicyEntry *entry) {
     if (!entry) return -1;
     if (entry->handle) return 0; // already loaded
@@ -59,13 +58,13 @@ int load_policy(PolicyEntry *entry) {
         entry->handle = NULL;
         return -1;
     }
-    /* Try to load optional reset function */
+
     entry->reset_symbol = dlsym(entry->handle, "policy_reset");
     
     return 0;
 }
 
-/* Close all loaded handles and reset count */
+
 void cleanup_policies(PolicyEntry *entries, int count) {
     for (int i=0; i<count; i++) {
         if (entries[i].handle) {
@@ -77,7 +76,7 @@ void cleanup_policies(PolicyEntry *entries, int count) {
     }
 }
 
-/* Unload all loaded policies */
+
 void unload_policy(PolicyEntry *entry) {
     if (!entry) return;
     if (entry->handle) {

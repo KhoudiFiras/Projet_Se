@@ -8,13 +8,13 @@
 
 #include "process.h"
 
-/* forward from parser and policy loader */
+
 int parse_config(const char *path, Process *arr, int maxp);
-int discover_policies(const char *dirpath, void *out, int max); // we will include the real type below
-int load_policy(void *entry);    // prototypes exist in policies_loader.c but we will cast later
+int discover_policies(const char *dirpath, void *out, int max); 
+int load_policy(void *entry);    
 void unload_policy(void *entry);
 
-/* Include the PolicyEntry definition here to avoid header clutter */
+
 typedef struct {
     char path[512];
     char name[128];
@@ -23,12 +23,12 @@ typedef struct {
     void *reset_symbol;
 } PolicyEntry;
 
-/* Parameters */
+
 #define MAX_PROC 128
 #define MAX_POL 32
-#define TICK_MS 500  /* GUI tick per simulation time unit in milliseconds */
+#define TICK_MS 500  
 
-/* Application state */
+
 static Process procs[MAX_PROC];
 static int proc_count = 0;
 static int sim_time = 0;
@@ -36,18 +36,18 @@ static int finished = 0;
 static bool sim_running = false;
 static int quantum = 2;
 
-/* Gantt history: record at each time which process index ran (-1 none) */
+
 static int gantt[MAX_TIME];
 
-/* Policies discovered */
+
 static PolicyEntry policies[MAX_POL];
 static int policy_count = 0;
 static int current_policy_index = 0;
 
-/* Function pointer type for policy_select */
+
 typedef int (*policy_select_t)(Process*, int, int, int);
 
-/* GTK widgets */
+
 static GtkWidget *window;
 static GtkWidget *entry_file;
 static GtkWidget *combo_policy;
@@ -66,7 +66,7 @@ static GtkListStore *store_history;
 
 static void discover_and_populate_policies();
 
-/* Stats History */
+
 typedef struct {
     char policy[128];
     int quantum;
@@ -79,7 +79,7 @@ static RunStats history[MAX_HISTORY];
 static int history_count = 0;
 static bool stats_recorded = false;
 
-/* Helper: update Ready queue view */
+
 static void refresh_ready_view() {
     gtk_list_store_clear(store_ready);
     for (int i=0;i<proc_count;i++) {
@@ -95,14 +95,14 @@ static void refresh_ready_view() {
         }
     }
     
-    /* Update Finished List */
+
     gtk_list_store_clear(store_finished);
     for (int i=0;i<proc_count;i++) {
         if (procs[i].state == FINISHED) {
             GtkTreeIter iter;
             gtk_list_store_append(store_finished, &iter);
             
-            /* Determine status: Killed if remaining > 0, else Done */
+
             const char *status = (procs[i].remaining > 0) ? "Killed" : "Done";
             
             gtk_list_store_set(store_finished, &iter,
@@ -122,7 +122,7 @@ static void refresh_ready_view() {
 static void record_current_run() {
     if (stats_recorded) return;
     if (history_count >= MAX_HISTORY) return;
-    if (sim_time == 0) return; // Don't record empty runs
+    if (sim_time == 0) return; 
 
     double avg_tat = 0, avg_wt = 0;
     int n = 0;
@@ -136,9 +136,8 @@ static void record_current_run() {
         }
     }
     if (n > 0) { avg_tat /= n; avg_wt /= n; }
-    else return; // No finished processes
+    else return; 
 
-    /* Save to history */
     strncpy(history[history_count].policy, policies[current_policy_index].name, 127);
     history[history_count].quantum = quantum;
     history[history_count].avg_tat = avg_tat;
@@ -146,7 +145,7 @@ static void record_current_run() {
     history_count++;
     stats_recorded = true;
 
-    /* Update UI */
+
     GtkTreeIter iter;
     gtk_list_store_append(store_history, &iter);
     gtk_list_store_set(store_history, &iter,
@@ -165,28 +164,28 @@ static gboolean on_draw_gantt(GtkWidget *widget, cairo_t *cr, gpointer data) {
 
     int w = alloc.width;
     int h = alloc.height;
-    int left = 50, top = 30; // marge pour axe temps
+    int left = 50, top = 30; 
     int row_h = 24;
     int cols = (sim_time + 10) > 1 ? (sim_time + 10) : 1;
     double cell_w = (double)(w - left - 20) / (cols);
 
-    /* background */
+
     cairo_set_source_rgb(cr, 1,1,1);
     cairo_paint(cr);
 
-    /* --- Axe du temps --- */
+
     cairo_set_source_rgb(cr, 0,0,0);
     cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_set_font_size(cr, 12);
     for (int t=0; t<=cols && t<MAX_TIME; t++) {
         double x = left + t*cell_w;
-        /* tick vertical */
+
         cairo_set_source_rgb(cr, 0.8,0.8,0.8);
         cairo_rectangle(cr, x, top-10, 1, h-top-20);
         cairo_fill(cr);
 
-        /* label du temps tous les 1 ou 2 unités selon l'espace */
-        if (t % 1 == 0) { // ici on peut mettre 1 ou 2 pour espacer
+
+        if (t % 1 == 0) { 
             cairo_set_source_rgb(cr, 0,0,0);
             char buf[16]; snprintf(buf, sizeof(buf), "%d", t);
             cairo_move_to(cr, x-4, top);
@@ -196,11 +195,11 @@ static gboolean on_draw_gantt(GtkWidget *widget, cairo_t *cr, gpointer data) {
 
 
 
-    /* draw process bars */
+
     for (int p = 0; p < proc_count; p++) {
         int y = top + p * row_h + 2;
 
-        /* name */
+
         cairo_set_source_rgb(cr, 0,0,0);
         cairo_move_to(cr, 5, y+12);
         cairo_show_text(cr, procs[p].name);
@@ -222,7 +221,7 @@ static gboolean on_draw_gantt(GtkWidget *widget, cairo_t *cr, gpointer data) {
     return FALSE;
 }
 
-/* Isometric 3D Bar Chart for Stats */
+/*Bar Chart for Stats */
 static gboolean on_draw_stats(GtkWidget *widget, cairo_t *cr, gpointer data) {
     (void)data;
     GtkAllocation alloc;
@@ -230,7 +229,7 @@ static gboolean on_draw_stats(GtkWidget *widget, cairo_t *cr, gpointer data) {
     int w = alloc.width;
     int h = alloc.height;
 
-    /* Calculate Stats */
+
     double avg_tat = 0, avg_wt = 0;
     int n = 0;
     for (int i=0; i<proc_count; i++) {
@@ -244,31 +243,27 @@ static gboolean on_draw_stats(GtkWidget *widget, cairo_t *cr, gpointer data) {
     }
     if (n > 0) { avg_tat /= n; avg_wt /= n; }
 
-    /* Background */
-    cairo_set_source_rgb(cr, 1, 1, 1); // White background
+
+    cairo_set_source_rgb(cr, 1, 1, 1); 
     cairo_paint(cr);
 
-    /* Isometric projection helper */
-    // x_iso = (x - y) * cos(30)
-    // y_iso = (x + y) * sin(30) - z
-    // We will draw simple 3D bars manually
     
     double bar_w = 60;
     double max_val = (avg_tat > avg_wt ? avg_tat : avg_wt);
     if (max_val < 10) max_val = 10;
     double scale = (h - 100) / max_val;
 
-    /* Draw TAT Bar */
+
     double x1 = w/3 - bar_w/2;
     double y1 = h - 50;
     double h1 = avg_tat * scale;
     
-    // Front face
+
     cairo_set_source_rgb(cr, 0.2, 0.6, 0.9); // Blue
     cairo_rectangle(cr, x1, y1 - h1, bar_w, h1);
     cairo_fill(cr);
     
-    // Top face
+
     cairo_new_path(cr);
     cairo_move_to(cr, x1, y1 - h1);
     cairo_line_to(cr, x1 + 20, y1 - h1 - 20);
@@ -278,7 +273,7 @@ static gboolean on_draw_stats(GtkWidget *widget, cairo_t *cr, gpointer data) {
     cairo_set_source_rgb(cr, 0.4, 0.8, 1.0); // Lighter Blue
     cairo_fill(cr);
     
-    // Side face
+
     cairo_new_path(cr);
     cairo_move_to(cr, x1 + bar_w, y1 - h1);
     cairo_line_to(cr, x1 + bar_w + 20, y1 - h1 - 20);
@@ -288,17 +283,17 @@ static gboolean on_draw_stats(GtkWidget *widget, cairo_t *cr, gpointer data) {
     cairo_set_source_rgb(cr, 0.1, 0.4, 0.7); // Darker Blue
     cairo_fill(cr);
 
-    /* Draw WT Bar */
+
     double x2 = 2*w/3 - bar_w/2;
     double y2 = h - 50;
     double h2 = avg_wt * scale;
 
-    // Front face
+
     cairo_set_source_rgb(cr, 0.9, 0.3, 0.3); // Red
     cairo_rectangle(cr, x2, y2 - h2, bar_w, h2);
     cairo_fill(cr);
 
-    // Top face
+
     cairo_new_path(cr);
     cairo_move_to(cr, x2, y2 - h2);
     cairo_line_to(cr, x2 + 20, y2 - h2 - 20);
@@ -308,7 +303,7 @@ static gboolean on_draw_stats(GtkWidget *widget, cairo_t *cr, gpointer data) {
     cairo_set_source_rgb(cr, 1.0, 0.5, 0.5); // Lighter Red
     cairo_fill(cr);
 
-    // Side face
+
     cairo_new_path(cr);
     cairo_move_to(cr, x2 + bar_w, y2 - h2);
     cairo_line_to(cr, x2 + bar_w + 20, y2 - h2 - 20);
@@ -318,7 +313,7 @@ static gboolean on_draw_stats(GtkWidget *widget, cairo_t *cr, gpointer data) {
     cairo_set_source_rgb(cr, 0.7, 0.1, 0.1); // Darker Red
     cairo_fill(cr);
 
-    /* Labels */
+
     cairo_set_source_rgb(cr, 0, 0, 0); // Black text
     cairo_set_font_size(cr, 14);
     
@@ -337,15 +332,15 @@ static gboolean on_draw_stats(GtkWidget *widget, cairo_t *cr, gpointer data) {
 
 
 
-/* simulation tick executed by g_timeout_add */
+
 static gboolean simulation_tick(gpointer data) {
     (void)data;
-    if (!sim_running) return TRUE; /* keep the timeout registered */
+    if (!sim_running) return TRUE;
 
-    /* discover policy function */
+
     if (current_policy_index < 0 || current_policy_index >= policy_count) return TRUE;
     if (!policies[current_policy_index].symbol) {
-        /* attempt to load */
+
         if (load_policy(&policies[current_policy_index]) != 0) {
             g_printerr("Failed to load policy\n");
             return TRUE;
@@ -353,10 +348,10 @@ static gboolean simulation_tick(gpointer data) {
     }
     policy_select_t fn = (policy_select_t)policies[current_policy_index].symbol;
 
-    /* call policy to choose process index */
-    int idx = fn(procs, proc_count, sim_time, quantum); /* sign: Process*, n, time, quantum */
 
-    /* Ensure any previously running process that is not the selected one is marked READY */
+    int idx = fn(procs, proc_count, sim_time, quantum); 
+
+
     for (int i = 0; i < proc_count; i++) {
         if (procs[i].state == RUNNING && i != idx) {
             procs[i].state = READY;
@@ -364,20 +359,20 @@ static gboolean simulation_tick(gpointer data) {
     }
 
     for (int i=0;i<proc_count;i++) {
-        /* set ready if arrived and not finished */
+
         if (procs[i].arrival <= sim_time && procs[i].state != FINISHED) {
             if (procs[i].state == NEW) procs[i].state = READY;
         }
     }
 
     if (idx >= 0 && idx < proc_count) {
-        /* run one unit */
+
         if (procs[idx].start_time == -1) procs[idx].start_time = sim_time;
         procs[idx].state = RUNNING;
         procs[idx].remaining--;
-        /* increment waited for others ready */
+
         for (int j=0;j<proc_count;j++) if (j!=idx && procs[j].state == READY) procs[j].waited++;
-        /* record in gantt */
+
         if (sim_time < MAX_TIME) gantt[sim_time] = idx;
 
         if (procs[idx].remaining <= 0) {
@@ -386,16 +381,16 @@ static gboolean simulation_tick(gpointer data) {
             finished++;
         }
     } else {
-        /* idle (no process), mark as -1 */
+
         if (sim_time < MAX_TIME) gantt[sim_time] = -1;
     }
 
     sim_time++;
 
-    /* update UI parts */
+
     refresh_ready_view();
 
-    /* running label: find any RUNNING */
+
     bool anyrun = false;
     for (int i=0;i<proc_count;i++) {
         if (procs[i].state == RUNNING) {
@@ -408,21 +403,21 @@ static gboolean simulation_tick(gpointer data) {
     }
     if (!anyrun) gtk_label_set_text(GTK_LABEL(label_running), "Idle");
 
-    /* redraw gantt */
+
     gtk_widget_queue_draw(drawing_gantt);
 
-    /* stop if finished all */
+
     if (finished >= proc_count) {
         sim_running = false;
         record_current_run();
         g_print("Simulation finished at time %d\n", sim_time);
-        return FALSE; /* stop timeout */
+        return FALSE; 
     }
 
-    return TRUE; /* keep timer running */
+    return TRUE; 
 }
 
-/* UI callbacks */
+
 static void on_browse(GtkButton *b, gpointer data) {
     (void)b; (void)data;
     GtkWidget *dialog = gtk_file_chooser_dialog_new("Select process file", GTK_WINDOW(window),
@@ -434,13 +429,13 @@ static void on_browse(GtkButton *b, gpointer data) {
         char *fn = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
         gtk_entry_set_text(GTK_ENTRY(entry_file), fn);
 
-        /* parse and populate processes */
+
         proc_count = parse_config(fn, procs, MAX_PROC);
         if (proc_count < 0) {
             g_printerr("Error parsing file\n");
             proc_count = 0;
         } else {
-            /* reset state fields and gantt */
+
             sim_time = 0; finished = 0; stats_recorded = false; for (int i=0;i<MAX_TIME;i++) gantt[i] = -1;
             for (int i=0;i<proc_count;i++) {
                 procs[i].remaining = procs[i].burst;
@@ -461,7 +456,6 @@ static void on_policy_changed(GtkComboBoxText *cb, gpointer data) {
     (void)data;
     const char *name = gtk_combo_box_text_get_active_text(cb);
     if (!name) return;
-    /* find matching policy entry by name */
     for (int i=0;i<policy_count;i++) {
         if (strcmp(policies[i].name, name) == 0) {
             current_policy_index = i;
@@ -471,39 +465,36 @@ static void on_policy_changed(GtkComboBoxText *cb, gpointer data) {
     }
 }
 
-/* Refresh policies callback */
+
 static void on_refresh_clicked(GtkButton *b, gpointer data) {
     (void)b; (void)data;
     
-    /* Cleanup existing policies */
-    // We need to declare cleanup_policies prototype or include header. 
-    // Since we don't have a header for loader, we'll declare it here or assume it's linked.
-    // Better to declare it.
+   
     extern void cleanup_policies(PolicyEntry *entries, int count);
     
     cleanup_policies(policies, policy_count);
     policy_count = 0;
     
-    /* Clear combo */
+
     gtk_combo_box_text_remove_all(GTK_COMBO_BOX_TEXT(combo_policy));
     
-    /* Rediscover */
+
     discover_and_populate_policies();
     
     g_print("Policies refreshed. Found %d policies.\n", policy_count);
 }
 
-/* callback Start — utilise le spin passé en user_data */
+
 static void on_start_clicked(GtkWidget *widget, gpointer data) {
     (void)widget;
     GtkWidget *spin = GTK_WIDGET(data);
-    /* récupérer la valeur choisie et l'écrire dans la variable globale */
+
     quantum = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin));
     printf("Quantum choisi = %d\n", quantum);
 
     if (!sim_running) {
         sim_running = true;
-        /* démarre le timer si ce n'est pas déjà fait */
+
         g_timeout_add(TICK_MS, simulation_tick, NULL);
     }
 }
@@ -519,7 +510,7 @@ static void on_reset_clicked(GtkButton *b, gpointer data) {
     if (sim_running || finished > 0) record_current_run();
     sim_running = false;
     
-    /* Reload config to restore initial state (priorities, bursts, etc.) */
+
     const char *fn = gtk_entry_get_text(GTK_ENTRY(entry_file));
     int loaded = -1;
     if (fn && strlen(fn) > 0) {
@@ -532,7 +523,7 @@ static void on_reset_clicked(GtkButton *b, gpointer data) {
         }
     }
 
-    /* Fallback reset if reload failed or no file */
+
     if (loaded < 0) {
         for (int i=0;i<proc_count;i++) {
             procs[i].remaining = procs[i].burst;
@@ -543,12 +534,12 @@ static void on_reset_clicked(GtkButton *b, gpointer data) {
         }
     }
 
-    /* Common reset */
+
     sim_time = 0; finished = 0;
     stats_recorded = false;
     for (int i=0;i<MAX_TIME;i++) gantt[i] = -1;
     
-    /* Reset policy state if available */
+
     if (current_policy_index >= 0 && current_policy_index < policy_count) {
         typedef void (*reset_fn_t)();
         if (policies[current_policy_index].reset_symbol) {
@@ -559,13 +550,14 @@ static void on_reset_clicked(GtkButton *b, gpointer data) {
 
     refresh_ready_view();
     gtk_widget_queue_draw(drawing_gantt);
+    gtk_label_set_text(GTK_LABEL(label_running), "Idle");
 }
 
 static void on_kill_clicked(GtkButton *b, gpointer data) {
     (void)b; (void)data;
     if (!sim_running) return;
     
-    /* Find running process */
+
     int idx = -1;
     for (int i=0; i<proc_count; i++) {
         if (procs[i].state == RUNNING) {
@@ -580,14 +572,13 @@ static void on_kill_clicked(GtkButton *b, gpointer data) {
         finished++;
         g_print("Process %s killed by user at time %d\n", procs[idx].name, sim_time);
         
-        /* Force immediate reschedule by clearing gantt for this tick (optional, but cleaner) */
-        // simulation_tick will handle picking the next one on next tick
+        
     }
 }
 
-/* Discover policies (scan politiques/ for .so) and populate combo */
+
 static void discover_and_populate_policies() {
-    /* use the discover_policies implemented in policies_loader.c */
+
     policy_count = discover_policies("politiques", policies, MAX_POL);
     if (policy_count <= 0) {
         g_print("No policies found in politiques/\n");
@@ -605,22 +596,22 @@ static void discover_and_populate_policies() {
     current_policy_index = default_idx;
 }
 
-/* Build GUI and connect everything */
+
 void build_gui() {
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Ordonnanceur Multi-tâche");
     gtk_window_set_default_size(GTK_WINDOW(window), 1000, 700);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
-    /* Main Horizontal Box (Split Left/Right) */
+    
     GtkWidget *hbox_main = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_container_add(GTK_CONTAINER(window), hbox_main);
 
-    /* Left Side: Controls + Visualization */
+    
     GtkWidget *vbox_left = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
     gtk_box_pack_start(GTK_BOX(hbox_main), vbox_left, TRUE, TRUE, 4);
 
-    /* Control Panel (Compact) */
+    
     GtkWidget *frame_ctrl = gtk_frame_new("⚙️ Zone de contrôle");
     gtk_box_pack_start(GTK_BOX(vbox_left), frame_ctrl, FALSE, FALSE, 4);
     GtkWidget *grid = gtk_grid_new();
@@ -723,10 +714,6 @@ void build_gui() {
     g_object_set(r_wt, "xalign", 1.0, NULL);
     gtk_tree_view_insert_column_with_attributes(GTK_TREE_VIEW(tree_hist), -1, "Avg WT", r_wt, "text", 3, NULL);
 
-    /* Format double columns to 2 decimal places */
-    // GTK TreeView simple text renderer doesn't support printf formatting easily without a data func
-    // For simplicity, we'll just display the double. For "beautiful", we might want a cell data func, 
-    // but let's stick to simple first.
 
     GtkWidget *sw_hist = gtk_scrolled_window_new(NULL, NULL);
     gtk_container_add(GTK_CONTAINER(sw_hist), tree_hist);
@@ -821,13 +808,12 @@ void build_gui() {
     gtk_widget_show_all(window);
 }
 
-/* entrypoint for app */
+
 int main(int argc, char **argv) {
     gtk_init(&argc, &argv);
     build_gui();
     gtk_main();
 
-    /* unload policies */
     for (int i=0;i<policy_count;i++) unload_policy(&policies[i]);
     return 0;
 }

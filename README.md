@@ -1,8 +1,9 @@
+
 # Process Scheduler Simulator
 
 A powerful, interactive, and visual Process Scheduler Simulator built in C using GTK+ 3.0. This application allows you to simulate, visualize, and compare different CPU scheduling algorithms in real-time.
 
-## 🚀 Features
+## Features
 
 *   **Real-time Visualization**: Watch the Gantt chart build dynamically as processes are scheduled.
 *   **Interactive Controls**: Start, Pause, Reset, and even "Kill" running processes on the fly.
@@ -11,7 +12,7 @@ A powerful, interactive, and visual Process Scheduler Simulator built in C using
 *   **Detailed Metrics**: Track process states (New, Ready, Running, Finished) and history of simulation runs.
 *   **Custom Configuration**: Load process lists from text files and adjust the Time Quantum for Round Robin.
 
-## 🛠️ Technologies Used
+## Technologies Used
 
 *   **Language**: C (C99/POSIX)
 *   **GUI Framework**: GTK+ 3.0
@@ -19,7 +20,7 @@ A powerful, interactive, and visual Process Scheduler Simulator built in C using
 *   **Build System**: GNU Make
 *   **Dynamic Linking**: `dlfcn` for runtime policy loading
 
-## 📋 Prerequisites
+## Prerequisites
 
 You need a Linux environment with GCC and GTK+ 3.0 development libraries installed.
 
@@ -29,7 +30,7 @@ sudo apt-get update
 sudo apt-get install build-essential libgtk-3-dev
 ```
 
-## ⚙️ Installation & Build
+## Installation & Build
 
 1.  **Clone the repository** (or extract the archive):
     ```bash
@@ -48,11 +49,12 @@ sudo apt-get install build-essential libgtk-3-dev
     make clean
     ```
 
-## 🖥️ Usage
+## Usage
 
 1.  **Run the Simulator**:
     ```bash
-    ./scheduler
+    ./scheduler 
+    ./scheduler sample_config.txt
     ```
 
 2.  **Load Processes**:
@@ -71,24 +73,27 @@ sudo apt-get install build-essential libgtk-3-dev
 ## 📂 Project Structure
 
 ```
-Projet_Se/
-├── include/           # Header files
-│   └── process.h      # Process struct definition
-├── politiques/        # Scheduling algorithms (Plugins)
-│   ├── fifo.c         # First-In First-Out implementation
-│   ├── rr.c           # Round Robin implementation
-│   ├── priority.c     # Priority-based implementation
-│   └── aging.c        # Aging policy implementation
-├── src/               # Main application source
-│   ├── gui.c          # Main GUI and simulation loop
-│   ├── parser.c       # Config file parser
-│   └── policies_loader.c # Dynamic library loader
-├── Makefile           # Build script
-├── README.md          # This file
-└── sample_config.txt  # Example process configuration
+├── include
+│   └── process.h
+├── LICENSE
+├── Makefile
+├── politiques
+│   ├── aging-multilevel.c
+│   ├── fifo.c
+│   ├── multilevel.c
+│   ├── priority.c
+│   ├── process.h
+│   └── rr.c
+├── README.md
+├── sample_config.txt
+├── src
+│   ├── gui.c
+│   ├── parser.c
+│   └── policies_loader.c
+└── style.css
 ```
 
-## 🧩 Adding New Policies
+## Adding New Policies
 
 You can add new scheduling algorithms without touching the core code!
 
@@ -102,106 +107,33 @@ You can add new scheduling algorithms without touching the core code!
     ```
 3.  Run `make` again. The new policy will automatically appear in the dropdown menu!
 =======
-# Ordonnanceur Multitâche Sous Linux
 
-
-## Présentation
-Ce projet implémente un simulateur d’**ordonnancement multitâche de processus sous Linux**, permettant de visualiser et tester plusieurs politiques d’ordonnancement classiques.
-
-
-Le programme charge dynamiquement les politiques d’ordonnancement depuis des modules `.so`, lit un fichier décrivant un ensemble de processus, puis simule leur exécution via :
-
-
-- une **interface graphique GTK** avec **diagramme de Gantt**
-
-
----
 
 
 ## Fonctionnalités principales
 
-
-### Version minimale
 1- Lecture d’un fichier de configuration des processus :
   - nom
   - date d’arrivée
   - durée (burst)
   - priorité
   - commentaires + lignes vides gérés
-- Affichage textuel de la simulation
-- Politiques d’ordonnancement implémentées :
+2- Politiques d’ordonnancement implémentées :
   - **FIFO**
   - **Round Robin**
   - **Priorité préemptive**
-- Makefile complet pour compiler le projet et générer les `.so`
+  - **Aging (priorité dynamique)** 
+  - **Multi-Level**
+3- Makefile complet pour compiler le projet et générer les `.so`
 
-
-### Fonctionnalités avancées
-- Politique avancée : **Aging / Multi-Level** (priorité dynamique)
-- IHM graphique GTK+ 3 avec suivi de la simulation en temps réel
-- Diagramme de Gantt graphique
-- Chargement dynamique des politiques (`dlopen`, `.so`)
-
-
----
-
-
-## Structure du projet
-Project_Se/
-
-
-    ├── Makefile
-
-
-    ├── sample_config.txt
-
-
-    ├── scheduler
-
-
-    ├── include/
-
-
-      ├── process.h    (Struct Process { String [ ] nom , int temp_arrivé , int temp_execution }
-
-
-    ├── src/
-  
-      ├── main.c
-
-
-      ├── parser.c 
-
-
-      ├── policies_loader.c
-
-
-      ├── utils.c
-     
-      └── gui.c
-
-
-    ├── politiques/
-
-
-      ├── fifo.c
-
-
-      ├── roundrobin.c
-
-
-      ├── priority.c
-
-
-      └── Aging.c
-
-
-    └── README.md
-
-
+4- IHM graphique GTK+ 3 avec suivi de la simulation en temps réel
+  - Diagramme de Gantt graphique
+5- Chargement dynamique des politiques (`dlopen`, `.so`)
 
 
 ---
+
+
 
 
 ## Format du fichier de configuration
@@ -220,8 +152,6 @@ P2 1 6 1
 P3 2 2 3
 
 
-
-
 ---
 
 
@@ -235,37 +165,18 @@ int policy_select(Process *proc, int n, int time, int quantum);
 
 ```
 Paramètre   Description
-proc  Tableau des processus
-n     Nombre total
-time  Temps courant
-quantum     Quantum (RR uniquement)
+- proc : Tableau des processus
+- n   :  Nombre total
+- time  :Temps courant
+- quantum    : Quantum (RR uniquement)
 
 
 La fonction renvoie l’index du processus à exécuter, ou -1 si aucun n’est prêt.
 
 
-Compilation & exécution
 
 
 
-
-
-
-Installer GTK (si nécessaire)
-``` 
-sudo apt install libgtk-3-dev
-
-
-make
-
-
-./scheduler
-
-
-make clean
-
-
-```
 ## Interface graphique
 L’IHM GTK permet :
 
@@ -288,26 +199,19 @@ L’IHM GTK permet :
 Licence : GENERAL PUBLIC LICENSE
 
 
-Certaines parties de ce projet, notamment les fonctions utilitaires, le code de l'interface graphique GTK et la gestion des processus, ont pu être générées ou assistées par des outils d'intelligence 
-artificielle (par exemple ChatGPT). Ces parties sont également distribuées sous la 
-GNU General Public License v3.0.
-
 
 ## Équipe (SCRUM)
-Travail réalisé en groupe scrum (5–7 membres) :
+Travail réalisé en groupe scrum (5 membres) :
+
+- KHEMIRI Eya
+
+- AYADI Ichrak
+
+- SATOURI Ranim
+
+- KHOUDI Firas
+
+- SASSI Naziha
 
 
-Sprint Planning
-
-
-Daily meetings
-
-
-Sprint Review
-
-
-Retrospective
-
-
-Le rapport SCRUM est fourni en PDF dans le rendu final.
 

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Process Scheduler Simulator
 
 A powerful, interactive, and visual Process Scheduler Simulator built in C using GTK+ 3.0. This application allows you to simulate, visualize, and compare different CPU scheduling algorithms in real-time.
@@ -311,4 +310,4 @@ Retrospective
 
 
 Le rapport SCRUM est fourni en PDF dans le rendu final.
->>>>>>> origin/main
+

@@ -26,7 +26,7 @@ typedef struct {
 
 #define MAX_PROC 128
 #define MAX_POL 32
-#define TICK_MS 500  
+#define TICK_MS 800  
 
 
 static Process procs[MAX_PROC];
@@ -335,7 +335,7 @@ static gboolean on_draw_stats(GtkWidget *widget, cairo_t *cr, gpointer data) {
 
 static gboolean simulation_tick(gpointer data) {
     (void)data;
-    if (!sim_running) return TRUE;
+    if (!sim_running) return False;
 
 
     if (current_policy_index < 0 || current_policy_index >= policy_count) return TRUE;

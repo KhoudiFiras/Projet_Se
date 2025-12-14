@@ -116,7 +116,9 @@ You can add new scheduling algorithms without touching the core code!
 Example process file:
 # name arrival burst priority
 P1 0 5 2
+
 P2 1 6 1
+
 P3 2 2 3
 ---
 
